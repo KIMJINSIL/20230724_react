@@ -4,13 +4,19 @@ import Layout from "../components/Layout";
 import LayoutContents from "../components/LayoutContents";
 import { useForm } from "react-hook-form";
 import Modal from "react-modal";
+import DaumPostcodeEmbed from 'react-daum-postcode';
+import { useMutation } from "react-query";
+import { userRegister } from "../api";
 
 export default function SignUp() {
   const [modalIsOpen, setIsOpen] = useState(false);
+  const [zipcode, setZipcode] = useState("");
+  const [addressDetail, setAddressDetail] = useState("");
   const {
     register,
-    // handleSubmit,
+    handleSubmit,
     watch,
+    reset,
     formState: { errors },
   } = useForm({ mode: "onChange" });
 
@@ -34,15 +40,41 @@ export default function SignUp() {
     },
   };
 
+  const handleComplete = (data) => {
+    setIsOpen(false);
+    setZipcode(data.zonecode);
+    setAddressDetail(data.address);
+  };
+
+  const {mutate} = useMutation(userRegister, {
+    onSuccess: () => {
+      reset();
+    }
+  })
+
+  const onSubmit = data => {
+    console.log(data);
+    mutate(data);
+  }
+
+
   return (
     <Layout>
       <Modal
         onRequestClose={closeModal}
         isOpen={modalIsOpen}
         style={customStyles}
-      ></Modal>
+      >
+        <div>우편번호</div>
+        <DaumPostcodeEmbed onComplete={handleComplete} />
+        <button
+          onClick={closeModal}
+          className="border border-neutral-300 px-4 py-1">
+          Close
+          </button>
+      </Modal>
       <LayoutContents>
-        <form>
+        <form onSubmit={handleSubmit(onSubmit)}>
           <table className="table_top w-full">
             <tbody>
               <tr>
@@ -139,6 +171,7 @@ export default function SignUp() {
                   <div className="space-x-1">
                     <input
                       {...register("zipcode")}
+                      value = {zipcode}
                       disabled
                       type="text"
                       className="border border-neutral-300 p-2 bg-neutral-50"
@@ -153,6 +186,7 @@ export default function SignUp() {
                   </div>
                   <input
                     {...register("address1")}
+                    value={addressDetail}
                     disabled
                     type="text"
                     className="w-full border border-neutral-300 p-2 bg-neutral-50"
